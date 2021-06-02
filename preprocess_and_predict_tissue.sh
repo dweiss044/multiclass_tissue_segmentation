@@ -14,7 +14,7 @@ function main()
 	   -rf tmp/T1.nii.gz \
 	   -ri LABEL 0.2vox \
 	   -rm tmp/prediction.nii.gz \
-	   $PREDDIR/${i}_prediction.nii.gz \
+	   $PREDDIR/${identifier}_prediction.nii.gz \
 	   -r
     
 }
