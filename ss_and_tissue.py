@@ -106,11 +106,12 @@ def main():
     outputDir = './tmp'
     hdf5_file = os.path.join(outputDir,"data.h5")
     write_data_to_file(file_tuple, hdf5_file, 
-                image_shape=config["image_shape"],
-                    subject_ids=['unidentified'])#,label_indices=[len(subject_files)-2, len(subject_files)-1])
+                       image_shape=config["image_shape"],
+                       subject_ids=['unidentified'])#,
+                       #label_indices=[len(subject_files)-2, len(subject_files)-1])
     data_file = open_data_file(hdf5_file)
 
-    ss_model = load_old_model(os.path.join(cur_dir,'models/T1/brain.h5'))
+    ss_model = load_old_model(os.path.join(cur_dir,'models/modality_independent/brain.h5'))
     tissue_model = load_old_model(os.path.join(cur_dir,args.model))
 
     toc = time.clock()

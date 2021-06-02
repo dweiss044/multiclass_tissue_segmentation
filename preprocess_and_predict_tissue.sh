@@ -29,7 +29,7 @@ function register_to_template()
 
   T1=$1
 
-  cp $T1 $TMPDIR
+  cp $T1 $TMPDIR/T1.nii.gz
 
   OUTDIR=$TMPDIR/TemplateReg
   mkdir -p $OUTDIR
@@ -37,7 +37,7 @@ function register_to_template()
   INVOUTPREFIX=$OUTDIR/${id}_to_template
 
   # template images
-  TEMPLATEDIR=$PWD/BrainTemplate/
+  TEMPLATEDIR=/home/shared/demo_brain_pipeline/BrainTemplate/OASIS/
   TEMPLATE=$TEMPLATEDIR/T_template0.nii.gz
   TEMPLATEMASK=$TEMPLATEDIR/T_template0_BrainCerebellumMask.nii.gz
 
@@ -98,7 +98,7 @@ COMMENT
         ${OUTPREFIX}_greedy_affine.mat \
     -rf $T1 \
     -ri LABEL 0.2vox \
-    -rm $TEMPLATEDIR/prior.nii.gz \
+    -rm $TEMPLATEDIR/Priors/prior.nii.gz \
         $TMPDIR/spatial_prior.nii.gz \
 
 	
