@@ -130,7 +130,6 @@ dependencies:
     - kaleido==0.0.3.post1
     - keras==2.2.4
     - keras-applications==1.0.8
-    - keras-contrib==2.0.8
     - keras-preprocessing==1.1.2
     - keyring==23.0.0
     - lazy-object-proxy==1.5.2

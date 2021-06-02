@@ -62,35 +62,6 @@ Models for every modality are included. In order to skull strip a different moda
 simply change the MOD variable in the second line of either of the two bash scripts
 from FLAIR to the desired modality and use as before.
 
-# Enhancement
-
-The same architecture can be used to predict enhancement with the proper model.
-Here the prediction program is predict_single_case_v3.  A wrapper script is
-provided to make use easier.  This wrapper is pretty particular about how it
-get its data so make sure that the files are organized and named correctly before
-using the script.
-
-predict_enhancement.sh has three possible inputs,
-
-    i) input directory (required)
-   ii) Unique identifying [Accession] number (required)
-  iii) Output filename (optional)
-
-The input directory MUST hold 3 images:
-
-    1) A T1 post contrast image named T1Post.nii.gz
-    2) A T1 image registered to the T1Post image named T1_transformed.nii.gz
-    3) A Difference image between T1Post and T1 images named T1PostDiff.nii.gz
-
-If these three images are not present in the input directory or not named in the
-above convention the program will not work.
-
-If the output file is not specified the output will be saved in the present working
-directory with the naming convention ${ACCESSION}_enhancement.nii.gz. An example call
-might be
-```
-$ ./predict_enhancement.sh /media/rnd/Auto_Diag/patients/9146424/T1Post/ 9146424 9146424_enhancement.nii.gz
-```
 
 # Training
 
