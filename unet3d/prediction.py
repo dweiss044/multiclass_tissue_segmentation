@@ -9,6 +9,7 @@ import csv
 import SimpleITK as sitk
 import tqdm
 import scipy
+import scipy.ndimage
 
 from .training import load_old_model
 from .utils import pickle_load
@@ -76,7 +77,7 @@ def predict_from_data_file_and_write_image(model, open_data_file, index, out_fil
     image.to_filename(out_file)
 
 
-def prediction_to_image(prediction, affine, label_map=False, threshold=0.5, labels=None):
+def prediction_to_image(prediction, affine, label_map=False, threshold=0.5, labels=None, fill=False):
     if prediction.shape[1] == 1:
         data = prediction[0, 0]
         if label_map:
@@ -95,6 +96,8 @@ def prediction_to_image(prediction, affine, label_map=False, threshold=0.5, labe
             return multi_class_prediction(prediction, affine)
     else:
         raise RuntimeError("Invalid prediction array shape: {0}".format(prediction.shape))
+    if fill:
+        data = fill_holes(data,threshold)
     return nib.Nifti1Image(data, affine)
 
 
@@ -231,6 +234,7 @@ def fill_holes(prediction, threshold):
     except:
         print("Error filling holes, install scipy.")
         return prediction
+        
 ## DAVID
 def predict_single_case(output_dir, model, data_file, training_modalities,
                         output_label_map=False, threshold=0.5, labels=None,
@@ -252,37 +256,19 @@ def predict_single_case(output_dir, model, data_file, training_modalities,
         prediction = predict(model, test_data, permute=permute)
     else:
         prediction = patch_wise_prediction(model=model, data=test_data, overlap=overlap, permute=permute)[np.newaxis]
+
     # Fill holes in binary brain mask
-    if task == 'brain':
-        prediction = fill_holes(prediction, threshold)
+    fill = True if task == 'brain' else False
     
     prediction_image = prediction_to_image(prediction, affine, label_map=output_label_map, threshold=threshold,
-                                           labels=labels)
+                                           labels=labels, fill=fill)
     if isinstance(prediction_image, list):
         for i, image in enumerate(prediction_image):      
             image.to_filename(os.path.join(case_directory, "prediction_{0}.nii.gz".format(i + 1)))
     else:
         prediction_image.to_filename(os.path.join(case_directory, "prediction.nii.gz"))
         
-    
-    '''    
-    identity = sitk.AffineTransform(3)
-    r = tuple([1,0,0,0,1,0,0,0,1])
-    t = tuple([0,0,0])
-    identity.SetMatrix(r)
-    identity.SetTranslation(t)
-    sitk.WriteTransform(identity, os.path.join(case_directory,"identity.txt"))
-    
-    Affine = sitk.AffineTransform(3)
-    a = affine.flatten().astype(float)
-    rot = tuple([ele for ele in a[[0,1,2,4,5,6,8,9,10]]])
-    trans = tuple([ele for ele in a[[3,7,11]]])
-    Affine.SetMatrix(rot)
-    Affine.SetTranslation(trans)
-    inverse = Affine.GetInverse()
-    sitk.WriteTransform(Affine, os.path.join(case_directory,"affine.txt"))
-    sitk.WriteTransform(inverse, os.path.join(case_directory,"inverse.txt"))
-    '''
+        
 def predict_brain_all_modalities(validation_keys_file,output_dir, model_file, hdf5_file, modalities,
                         output_label_map=False, threshold=0.5, labels=None, overlap=16, permute=False):
     
@@ -306,13 +292,13 @@ def predict_brain_all_modalities(validation_keys_file,output_dir, model_file, hd
         #print(modality)
         run_validation_case_v2(data_index=index, output_dir=case_directory, model=model, data_file=data_file,
                             training_modalities=modality, output_label_map=output_label_map, labels=labels,
-                            threshold=threshold, overlap=overlap, permute=permute)
+                            threshold=threshold, overlap=overlap, permute=permute, task='brain')
         cnt = cnt + 1
     
     data_file.close()
     
 def run_validation_case_v2(data_index, output_dir, model, data_file, training_modalities,
-                        output_label_map=False, threshold=0.5, labels=None, overlap=16, permute=False):
+                        output_label_map=False, threshold=0.5, labels=None, overlap=16, permute=False, task=None):
     """
     Runs a test case and writes predicted images to file.
     :param data_index: Index from of the list of test cases to get an image prediction from.
@@ -340,8 +326,9 @@ def run_validation_case_v2(data_index, output_dir, model, data_file, training_mo
         prediction = predict(model, test_data, permute=permute)
     else:
         prediction = patch_wise_prediction(model=model, data=test_data, overlap=overlap, permute=permute)[np.newaxis]
-    prediction_image = prediction_to_image(prediction, affine, label_map=output_label_map, threshold=threshold,
-                                           labels=labels)
+    # Fill holes in binary brain mask
+    fill = True if task == 'brain' else False
+    prediction_image = prediction_to_image(prediction, affine, label_map=output_label_map, threshold=threshold, labels=labels, fill=fill)
     if isinstance(prediction_image, list):
         for i, image in enumerate(prediction_image):
             image.to_filename(os.path.join(output_dir, "prediction_{0}.nii.gz".format(i + 1)))
