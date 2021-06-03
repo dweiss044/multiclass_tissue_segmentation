@@ -7,19 +7,12 @@ Created on Tue Dec 11 20:46:00 2018
 """
 
 import os
-import glob
-import csv
 import json
-
-from unet3d.data import write_data_to_file, open_data_file
-from unet3d.generator import get_training_and_validation_generators
-from unet3d.model import isensee2017_model
-from unet3d.training import load_old_model, train_model
 
 from unet3d.prediction import run_validation_cases
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID" 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(cur_dir)
@@ -29,7 +22,7 @@ with open(config_json) as jf:
     config = json.load(jf)
 
 def main():
-    prediction_dir = os.path.abspath("predictions/T1/test")
+    prediction_dir = os.path.abspath("predictions/T1/validation")
     run_validation_cases(validation_keys_file=config["validation_file"],
                          model_file=config["model_file"],
                          training_modalities=config["training_modalities"],

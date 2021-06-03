@@ -18,7 +18,7 @@ from unet3d.training import load_old_model, train_model
 #from unet3d.metrics import weighted_cce, w_categorical_crossentropy_loss, categorical_crossentropy_loss, w_categorical_crossentropy_old
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID" 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(cur_dir)
@@ -58,8 +58,11 @@ config["validation_patch_overlap"] = 0  # if > 0, during training, validation pa
 config["training_patch_start_offset"] = (16, 16, 16)  # randomly offset the first patch index by up to this offset
 config["skip_blank"] = True  # if True, then patches without any target will be skipped
 
-config["LOAD_MODEL"] = True
-config["initmodel"] = os.path.abspath('./models/T1/tissue_w_template_NNprior.h5')
+config["split_file"] = os.path.abspath('split.csv') # File that contains identifiers and train/test split
+config["image_dir"] = os.path.abspath('images') # Directory that contains source images and segmentations
+
+config["LOAD_MODEL"] = True # If True then will start training from config["initmodel"]
+config["initmodel"] = os.path.abspath('models/T1/tissue_w_template_NNprior.h5')
 config["data_file"] = os.path.abspath("data/51U_T1_tissue_w_template.h5")
 config["model_file"] = os.path.abspath("models/T1/51U_tissue_w_template_init_pennmodel.h5")
 config["training_file"] = os.path.abspath("data/T1tissue_w_template_training.pkl")
@@ -69,26 +72,25 @@ config["overwrite"] = False # If True, will previous files. If False, will use p
 training_data_files = list()
 subject_ids = list()
 
-def read_split(splitDir = '/media/galileo/rnd/BGandWMCasesSplit.csv'):
-    trainDirs = []
-    testDirs = []
+def read_split(splitFile):
     trainID = []
     testID = []
-    baseDir = '/data/rauschecker1/images/51U/tissue_patients'
-    with open(splitDir, 'r') as csvfile:
+    with open(splitFile, 'r') as csvfile:
         reader = csv.reader(csvfile)
-        
         for row in reader:
-            if row[4] == "Validation":
-                trainDirs.append("%s/%s" % (baseDir,row[1]))
-                trainID.append(row[1])
-            elif row[4] == "Test":
-                testDirs.append("%s/%s" % (baseDir,row[1]))
-                testID.append(row[1])
-    return trainDirs, testDirs, trainID, testID
+            if row[1] == "Train":
+                trainID.append(row[0])
+            elif row[1] == "Test":
+                testID.append(row[0])
+    return trainID, testID
 
 
-trainDirs, testDirs, trainID, testID = read_split(splitDir = '/data/rauschecker1/images/51U/analysis_input/subj_51U.csv')
+trainID, testID = read_split(config["split_file"])
+
+baseDir = config["image_dir"]
+
+trainDirs = ["%s/%s" % (baseDir, x) for x in trainID]
+testDirs = ["%s/%s" % (baseDir, x) for x in testID]
 
 for i in range(len(trainDirs)):
     subject_files = list()
@@ -99,31 +101,11 @@ for i in range(len(trainDirs)):
 
 if not(os.path.exists(config["data_file"])):    
     write_data_to_file(training_data_files, config["data_file"], 
-                   image_shape=config["image_shape"],
-                       subject_ids=trainID, label_indices = [len(subject_files) - 1, len(subject_files) - 2])
+                       image_shape=config["image_shape"],
+                       subject_ids=trainID, 
+                       label_indices=[len(subject_files)-1, len(subject_files)-2])
 
 data_file_opened = open_data_file(config["data_file"])
-'''
-                   # BG, CSF,  GM,  WM,  DG,  BS,  CB
-weights = np.array([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-                    [9.5, 1.0, 9.5, 9.5, 9.5, 9.5, 9.5],
-                    [5.3, 5.3, 1.0, 5.3, 5.3, 5.3, 5.3],
-                    [5.3, 5.3, 5.3, 1.0, 5.3, 5.3, 5.3],
-                    [65., 65., 65., 65., 1.0, 65., 65.],
-                    [127., 127., 127., 127., 127., 1.0, 127.],
-                    [16., 16., 16., 16., 16., 16., 1.0]])
-'''
-# weights without background class
-#weights = np.array([1.88, 1.04, 1., 15., 25., 3.2])
-# weights with background class
-#weights = np.array([1., 6.77, 7.28, 7.34, 4.75, 4.09, 11.36])
-'''
-model = isensee2017_model(input_shape=config["input_shape"], n_labels=config["n_labels"],
-                              initial_learning_rate=config["initial_learning_rate"],
-                              n_base_filters=config["n_base_filters"],
-                              loss_function=categorical_crossentropy_loss,
-                              activation_name="softmax")
-'''
 
 if config["LOAD_MODEL"]:
     print("Initializing model from %s" % config["initmodel"])
@@ -151,9 +133,6 @@ train_generator, validation_generator, n_train_steps, n_validation_steps = get_t
         augment_flip=config["flip"],
         augment_distortion_factor=config["distort"])
 
-# for i in range(n_train_steps):
-#     x,y = next(train_generator)
-#     print(x.shape,y.shape)
 
 train_model(model=model,
                 model_file=config["model_file"],
