@@ -69,6 +69,11 @@ config["training_file"] = os.path.abspath("data/T1tissue_w_template_training.pkl
 config["validation_file"] = os.path.abspath("data/T1tissue_w_template_validation.pkl")
 config["overwrite"] = False # If True, will previous files. If False, will use previously written files.
 
+jsonfile = os.path.splitext(config["model_file"])[0]+'.json'
+j = json.dumps(config, indent=4)
+with open(jsonfile, 'w') as fp:
+    print(j, file=fp)
+
 training_data_files = list()
 subject_ids = list()
 
@@ -146,7 +151,3 @@ train_model(model=model,
                 early_stopping_patience=config["early_stop"],
                 n_epochs=config["n_epochs"])
 
-jsonfile = os.path.splitext(config["model_file"])[0]+'.json'
-j = json.dumps(config, indent=4)
-with open(jsonfile, 'w') as fp:
-    print(j, file=fp)
