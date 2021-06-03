@@ -2,11 +2,12 @@ function main()
 {
     image=$1
     model=$2
-    identifier=$3
-    PREDDIR=${4:-prediction}
+    ssmodel=$3
+    identifier=$4
+    PREDDIR=${5:-prediction}
     register_to_template $image
 
-    python ss_and_tissue.py tmp/T1.nii.gz tmp/spatial_prior.nii.gz tmp $model --gpu 0
+    python ss_and_tissue.py tmp/T1.nii.gz tmp/spatial_prior.nii.gz tmp $model $ssmodel --gpu 0
     
     mkdir -p $PREDDIR
     # Resample to native space
@@ -37,7 +38,7 @@ function register_to_template()
   INVOUTPREFIX=$OUTDIR/${id}_to_template
 
   # template images
-  TEMPLATEDIR=/home/shared/demo_brain_pipeline/BrainTemplate/OASIS/
+  TEMPLATEDIR=./BrainTemplate
   TEMPLATE=$TEMPLATEDIR/T_template0.nii.gz
   TEMPLATEMASK=$TEMPLATEDIR/T_template0_BrainCerebellumMask.nii.gz
 
@@ -98,11 +99,11 @@ COMMENT
         ${OUTPREFIX}_greedy_affine.mat \
     -rf $T1 \
     -ri LABEL 0.2vox \
-    -rm $TEMPLATEDIR/Priors/prior.nii.gz \
+    -rm $TEMPLATEDIR/prior.nii.gz \
         $TMPDIR/spatial_prior.nii.gz \
 
 	
 }
 
 
-main $1 $2 $3 $4
+main $1 $2 $3 $4 $5

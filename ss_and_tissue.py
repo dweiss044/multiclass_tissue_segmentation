@@ -90,6 +90,7 @@ def main():
     parser.add_argument('prior', default=None, help='Spatial prior image')
     parser.add_argument('outdir',default='./tmp',help='Where to save predictions')
     parser.add_argument('model',default='models/paper/tissue_w_template_NNprior.h5',help='Model to use.')
+    parser.add_argument('ssmodel',default='models/modality_independent/brain.h5',help='Skullstripping model to use.')
     parser.add_argument('--gpu', default='1',help='Which gpu to use')
     args = parser.parse_args()
 
@@ -111,7 +112,7 @@ def main():
                        #label_indices=[len(subject_files)-2, len(subject_files)-1])
     data_file = open_data_file(hdf5_file)
 
-    ss_model = load_old_model(os.path.join(cur_dir,'models/modality_independent/brain.h5'))
+    ss_model = load_old_model(os.path.join(cur_dir, args.ssmodel))
     tissue_model = load_old_model(os.path.join(cur_dir,args.model))
 
     toc = time.clock()
